@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import NDK, { NDKPrivateKeySigner, NDKKind, NDKEvent } from "@nostr-dev-kit/ndk";
-import { relays } from "./config.js";
+import { appId, onlyFrPubkeys, relays } from "./config.js";
 import { isFrench } from './src/is_french.js';
 import { addBookmark } from './src/add_bookmark.js';
 
@@ -17,7 +17,13 @@ await ndk.connect();
 const user = ndk.activeUser;
 
 let follows = await ndk.activeUser.followSet();
-let repostedEventsId = [];
+
+const repostedEvents = await ndk.fetchEvents({
+    kinds: [NDKKind.Repost],
+    authors: [user.pubkey],
+    limit: 200,
+});
+let repostedEventsId = Array.from(repostedEvents).map((e) => ["e", e.tags.find(tag => tag[0] == "e")[1]]);
 
 const followSub = ndk.subscribe({
     kinds: [NDKKind.Contacts],
@@ -25,17 +31,27 @@ const followSub = ndk.subscribe({
     since: Math.floor(Date.now() / 1000),
 });
 followSub.on("event", async () => {
+    console.log("onFollow");
     follows = await ndk.activeUser.followSet();
+});
+followSub.on("closed", () => {
+    console.log("followSub closed");
 });
 
 const repostSub = ndk.subscribe({
-    kinds: [NDKKind.DVMReqDiscoveryNostrContent],
+    kinds: [NDKKind.Repost],
+    authors: [user.pubkey],
     since: Math.floor(Date.now() / 1000),
 });
 repostSub.on("event", (event) => {
+    console.log("onRepost");
+
     const repostedEventId = event.tags.find(tag => tag[0] == "e")[1];
     repostedEventsId.unshift(["e", repostedEventId]);
     repostedEventsId = repostedEventsId.slice(0, 200);
+});
+repostSub.on("closed", () => {
+    console.log("repostSub closed");
 });
 
 const dvmSub = ndk.subscribe({
@@ -44,6 +60,7 @@ const dvmSub = ndk.subscribe({
     "#p": [user.pubkey],
 });
 dvmSub.on("event", (event) => {
+    console.log("onDvmRequest");
     const stringifyedConted = JSON.stringify(repostedEventsId);
 
     const res = new NDKEvent(ndk, {
@@ -60,18 +77,32 @@ dvmSub.on("event", (event) => {
 
     res.publish();
 });
+dvmSub.on("closed", () => {
+    console.log("dvmSub closed");
+});
 
 const allEventSub = ndk.subscribe({
     kinds: [NDKKind.Text],
     since: Math.floor(Date.now() / 1000),
 });
 allEventSub.on("event", (event) => {
-    const stringifyedEvent = event.serialize();
+    if (event.content == appId) {
+        console.log("Secret string detected");
+        return;
+    }
 
     async function addNote() {
+        console.log("Add note");
         if (follows.has(event.author.pubkey)) event.repost();
         else addBookmark(ndk, event.id);
     }
+
+    if (onlyFrPubkeys.includes(event.pubkey)) {
+        addNote();
+        return;
+    }
+
+    const stringifyedEvent = event.serialize();
 
     const nostrfrRegex = /#nostrfr(\W|$)/;
     const isNostrfr = nostrfrRegex.test(event.content);
@@ -87,3 +118,8 @@ allEventSub.on("event", (event) => {
 
     addNote();
 });
+allEventSub.on("closed", () => {
+    console.log("allEventSub closed");
+});
+
+console.log("Started");
