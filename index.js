@@ -98,6 +98,7 @@ allEventSub.on("event", (event) => {
     }
 
     if (onlyFrPubkeys.includes(event.pubkey)) {
+        console.log("Detected onlyFrPubkeys");
         addNote();
         return;
     }
