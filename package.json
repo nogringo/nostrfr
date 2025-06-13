@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@nostr-dev-kit/ndk": "^2.14.24",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0"
   },
   "type": "module"
 }

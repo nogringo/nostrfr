@@ -3,6 +3,9 @@ import NDK, { NDKPrivateKeySigner, NDKKind, NDKEvent } from "@nostr-dev-kit/ndk"
 import { appId, onlyFrPubkeys, relays } from "./config.js";
 import { isFrench } from './src/is_french.js';
 import { addBookmark } from './src/add_bookmark.js';
+import pino from 'pino';
+
+const logger = pino();
 
 const skHex = process.env.SK_HEX;
 const signer = new NDKPrivateKeySigner(skHex);
@@ -31,11 +34,11 @@ const followSub = ndk.subscribe({
     since: Math.floor(Date.now() / 1000),
 });
 followSub.on("event", async () => {
-    console.log("onFollow");
+    logger.info("onFollow");
     follows = await ndk.activeUser.followSet();
 });
 followSub.on("closed", () => {
-    console.log("followSub closed");
+    logger.info("followSub closed");
 });
 
 const repostSub = ndk.subscribe({
@@ -44,14 +47,14 @@ const repostSub = ndk.subscribe({
     since: Math.floor(Date.now() / 1000),
 });
 repostSub.on("event", (event) => {
-    console.log("onRepost");
+    logger.info("onRepost");
 
     const repostedEventId = event.tags.find(tag => tag[0] == "e")[1];
     repostedEventsId.unshift(["e", repostedEventId]);
     repostedEventsId = repostedEventsId.slice(0, 200);
 });
 repostSub.on("closed", () => {
-    console.log("repostSub closed");
+    logger.info("repostSub closed");
 });
 
 const dvmSub = ndk.subscribe({
@@ -60,7 +63,7 @@ const dvmSub = ndk.subscribe({
     "#p": [user.pubkey],
 });
 dvmSub.on("event", (event) => {
-    console.log("onDvmRequest");
+    logger.info("onDvmRequest");
     const stringifyedConted = JSON.stringify(repostedEventsId);
 
     const res = new NDKEvent(ndk, {
@@ -78,7 +81,7 @@ dvmSub.on("event", (event) => {
     res.publish();
 });
 dvmSub.on("closed", () => {
-    console.log("dvmSub closed");
+    logger.info("dvmSub closed");
 });
 
 const allEventSub = ndk.subscribe({
@@ -87,18 +90,18 @@ const allEventSub = ndk.subscribe({
 });
 allEventSub.on("event", (event) => {
     if (event.content == appId) {
-        console.log("Secret string detected");
+        logger.info("Secret string detected");
         return;
     }
 
     async function addNote() {
-        console.log("Add note");
+        logger.info("Add note");
         if (follows.has(event.author.pubkey)) event.repost();
         else addBookmark(ndk, event.id);
     }
 
     if (onlyFrPubkeys.includes(event.pubkey)) {
-        console.log("Detected onlyFrPubkeys");
+        logger.info("Detected onlyFrPubkeys");
         addNote();
         return;
     }
@@ -120,7 +123,7 @@ allEventSub.on("event", (event) => {
     addNote();
 });
 allEventSub.on("closed", () => {
-    console.log("allEventSub closed");
+    logger.info("allEventSub closed");
 });
 
-console.log("Started");
+logger.info("Started");
