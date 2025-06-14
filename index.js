@@ -100,11 +100,11 @@ allEventSub.on("event", (event) => {
         else addBookmark(ndk, event.id);
     }
 
-    if (onlyFrPubkeys.includes(event.pubkey)) {
-        logger.info("Detected onlyFrPubkeys");
-        addNote();
-        return;
-    }
+    // if (onlyFrPubkeys.includes(event.pubkey)) {
+    //     logger.info("Detected onlyFrPubkeys");
+    //     addNote();
+    //     return;
+    // }
 
     const stringifyedEvent = event.serialize();
 
