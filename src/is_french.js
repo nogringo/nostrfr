@@ -1,9 +1,12 @@
 import { detectAll } from 'tinyld';
+import { bannedWords } from '../config.js';
 
 export function isFrench(text) {
+    if (bannedWords.some(word => text.includes(word))) return false;
+
     text = text
         .split(' ')
-        .filter((word) => !word.startsWith('#') && !word.startsWith('http') && !word.startsWith('nostr:npub'))
+        .filter((word) => !word.startsWith('#') && !word.startsWith('http') && !word.startsWith('nostr:npub') && !word.startsWith('nostr:note'))
         .join(' ');
 
     try {

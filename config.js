@@ -19,3 +19,4 @@ export const relays = [
   // "wss://nostr-pub.wellorder.net/",
   // "wss://nostr.bitcoiner.social/",
 ];
+export const bannedWords = ["beautiful", "bienvenidos", "congratulations", "cropdustin", "travel", "channel", "fabulous", "good"];
