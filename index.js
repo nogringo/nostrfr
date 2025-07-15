@@ -37,9 +37,6 @@ followSub.on("event", async () => {
     logger.info("onFollow");
     follows = await ndk.activeUser.followSet();
 });
-followSub.on("closed", () => {
-    logger.info("followSub closed");
-});
 
 const repostSub = ndk.subscribe({
     kinds: [NDKKind.Repost],
@@ -52,9 +49,6 @@ repostSub.on("event", (event) => {
     const repostedEventId = event.tags.find(tag => tag[0] == "e")[1];
     repostedEventsId.unshift(["e", repostedEventId]);
     repostedEventsId = repostedEventsId.slice(0, 200);
-});
-repostSub.on("closed", () => {
-    logger.info("repostSub closed");
 });
 
 const dvmSub = ndk.subscribe({
@@ -80,15 +74,17 @@ dvmSub.on("event", (event) => {
 
     res.publish();
 });
-dvmSub.on("closed", () => {
-    logger.info("dvmSub closed");
-});
 
 const allEventSub = ndk.subscribe({
     kinds: [NDKKind.Text],
     since: Math.floor(Date.now() / 1000),
 });
 allEventSub.on("event", (event) => {
+    if (ndk.mutedIds.has(event.author.pubkey)) return;
+
+    const stringifyedEvent = event.serialize();
+    const isFollow = follows.has(event.author.pubkey);
+
     if (event.content == appId) {
         logger.info("Secret string detected");
         return;
@@ -96,7 +92,7 @@ allEventSub.on("event", (event) => {
 
     async function addNote() {
         logger.info("Add note");
-        if (follows.has(event.author.pubkey)) event.repost();
+        if (isFollow) event.repost();
         else addBookmark(ndk, event.id);
     }
 
@@ -106,24 +102,28 @@ allEventSub.on("event", (event) => {
     //     return;
     // }
 
-    const stringifyedEvent = event.serialize();
-
     const nostrfrRegex = /#nostrfr(\W|$)/;
     const isNostrfr = nostrfrRegex.test(event.content);
-    if (isNostrfr) addNote();
+    if (isNostrfr) {
+        addNote();
+        return;
+    }
 
-    const isRssFeed = event.tags.some(tag => tag[0] == "proxy" && tag[2] == "rss");
-    if (isRssFeed) return;
+    if (isFollow) {
+        if (isFrench(event.content)) {
+            event.repost();
+            return;
+        }
+    }
+    else {
+        const isMostr = stringifyedEvent.includes("mostr.pub");
+        if (isMostr) return;
 
-    const isMostr = stringifyedEvent.includes("mostr.pub");
-    if (isMostr) return;
+        const isRssFeed = event.tags.some(tag => tag[0] == "proxy" && tag[2] == "rss");
+        if (isRssFeed) return;
 
-    if (!isFrench(event.content)) return;
-
-    addNote();
-});
-allEventSub.on("closed", () => {
-    logger.info("allEventSub closed");
+        if (isFrench(event.content, 0.16)) addBookmark(ndk, event.id);
+    }
 });
 
 logger.info("Started");

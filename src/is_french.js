@@ -1,7 +1,7 @@
 import { detectAll } from 'tinyld';
 import { bannedWords } from '../config.js';
 
-export function isFrench(text) {
+export function isFrench(text, minAccuracy) {
     if (bannedWords.some(word => text.includes(word))) return false;
 
     text = text
@@ -15,6 +15,8 @@ export function isFrench(text) {
         if (tinyldResult.length == 0) return false;
 
         if (tinyldResult[0].lang !== "fr") return false;
+
+        if (tinyldResult[0].accuracy < (minAccuracy || 0)) return false;
 
         if (tinyldResult.length == 1) return true;
 

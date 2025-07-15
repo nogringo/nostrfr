@@ -10,7 +10,7 @@ export const relays = [
   // "wss://relay.current.fyi",
   "wss://relay.primal.net",
   "wss://nos.lol",
-  // "wss://relay.snort.social",
+  "wss://relay.snort.social",
   // "wss://nostr.fmt.wiz.biz/",
   // "wss://nostr.oxtr.dev/",
   "wss://relay.damus.io/",
@@ -18,5 +18,6 @@ export const relays = [
   // "wss://brb.io",
   // "wss://nostr-pub.wellorder.net/",
   // "wss://nostr.bitcoiner.social/",
+  "wss://bwcervpt.mooo.com",
 ];
 export const bannedWords = ["beautiful", "bienvenidos", "congratulations", "cropdustin", "travel", "channel", "fabulous", "good"];
