@@ -15,7 +15,7 @@ const ndk = new NDK({
     explicitRelayUrls: relays,
 });
 
-await ndk.connect();
+await ndk.connect(1000);
 
 const user = ndk.activeUser;
 
