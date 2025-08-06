@@ -26,7 +26,9 @@ const repostedEvents = await ndk.fetchEvents({
     authors: [user.pubkey],
     limit: 200,
 });
-let repostedEventsId = Array.from(repostedEvents).map((e) => ["e", e.tags.find(tag => tag[0] == "e")[1]]);
+let repostedEventsId = Array.from(repostedEvents)
+    .sort((a, b) => b.created_at - a.created_at)
+    .map((e) => ["e", e.tags.find(tag => tag[0] == "e")[1]]);
 
 const followSub = ndk.subscribe({
     kinds: [NDKKind.Contacts],
