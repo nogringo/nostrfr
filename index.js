@@ -127,6 +127,8 @@ const allEventSub = ndk.subscribe({
     since: Math.floor(Date.now() / 1000),
 });
 allEventSub.on("event", async (event) => {
+    console.log("event");
+    return;
     try {
         if (ndk.mutedIds?.has(event.author.pubkey)) return;
 
